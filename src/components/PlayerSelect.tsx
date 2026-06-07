@@ -8,23 +8,23 @@ import { PlayerCharacter } from '../types';
 
 interface PlayerSelectProps {
     onPlayerSelect: (player: PlayerCharacter) => void;
-    spImage: HTMLImageElement;
-    dhImage: HTMLImageElement;
+    indImage: HTMLImageElement;
+    ausImage: HTMLImageElement;
 }
 
-const PlayerSelect: React.FC<PlayerSelectProps> = ({ onPlayerSelect, spImage, dhImage }) => {
+const PlayerSelect: React.FC<PlayerSelectProps> = ({ onPlayerSelect, indImage, ausImage }) => {
     return (
         <div className="player-select-overlay">
             <div className="player-select-container">
                 <h2 className="player-select-title">Choose Your Player</h2>
                 <div className="player-options">
-                    <div className="player-card" onClick={() => onPlayerSelect('SP')} role="button" tabIndex={0} aria-label="Select player SP">
-                        <img src={spImage.src} alt="SP Batsman" />
-                        <div className="player-name">SP</div>
+                    <div className="player-card" onClick={() => onPlayerSelect('IND')} role="button" tabIndex={0} aria-label="Select India (IND)">
+                        <img src={indImage.src} alt="India Batsman" />
+                        <div className="player-name">IND</div>
                     </div>
-                    <div className="player-card" onClick={() => onPlayerSelect('DH')} role="button" tabIndex={0} aria-label="Select player DH">
-                        <img src={dhImage.src} alt="DH Batsman" />
-                        <div className="player-name">DH</div>
+                    <div className="player-card" onClick={() => onPlayerSelect('AUS')} role="button" tabIndex={0} aria-label="Select Australia (AUS)">
+                        <img src={ausImage.src} alt="Australia Batsman" />
+                        <div className="player-name">AUS</div>
                     </div>
                 </div>
             </div>

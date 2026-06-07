@@ -6,7 +6,7 @@
 // Fix: Removed self-import of GameState that was causing a conflict.
 export type GameState = 'PLAYER_SELECT' | 'IDLE' | 'LOADING' | 'READY' | 'BOWLING' | 'HITTING' | 'BALL_IN_PLAY' | 'OUT' | 'BALL_DEAD' | 'GAME_OVER' | 'TUTORIAL';
 export type ShotDirection = 'STRAIGHT' | 'OFF' | 'LEG';
-export type PlayerCharacter = 'SP' | 'DH';
+export type PlayerCharacter = 'IND' | 'AUS';
 export type TutorialStep = 'NONE' | 'INTRO' | 'AIM_OFF' | 'AIM_STRAIGHT' | 'AIM_LEG' | 'AIM_DONE' | 'SWING_INTRO' | 'SWING_PRACTICE' | 'COMPLETE';
 
 

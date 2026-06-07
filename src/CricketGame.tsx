@@ -28,7 +28,7 @@ function CricketGame() {
     const assets = useGameAssets();
     const commentary = useLiveCommentary();
     const game = useGameEngine({ assets, commentary });
-    const [playerCharacter, setPlayerCharacter] = useState<PlayerCharacter>('SP');
+    const [playerCharacter, setPlayerCharacter] = useState<PlayerCharacter>('IND');
 
     const handlePlayerSelect = (player: PlayerCharacter) => {
         setPlayerCharacter(player);
@@ -50,8 +50,8 @@ function CricketGame() {
             {showPlayerSelect && (
                 <PlayerSelect
                     onPlayerSelect={handlePlayerSelect}
-                    spImage={assets.batsmanImageRef.current}
-                    dhImage={assets.dhBatsmanImageRef.current}
+                    indImage={assets.batsmanImageRef.current}
+                    ausImage={assets.dhBatsmanImageRef.current}
                 />
             )}
 
@@ -101,7 +101,7 @@ function CricketGame() {
                 shotDirection={game.shotDirection}
                 assetsLoaded={assets.assetsLoaded}
                 batImage={assets.batImageRef.current}
-                batsmanImage={playerCharacter === 'SP' ? assets.batsmanImageRef.current : assets.dhBatsmanImageRef.current}
+                batsmanImage={playerCharacter === 'IND' ? assets.batsmanImageRef.current : assets.dhBatsmanImageRef.current}
                 ballImage={assets.ballImageRef.current}
                 grassImage={assets.grassImageRef.current}
             />
