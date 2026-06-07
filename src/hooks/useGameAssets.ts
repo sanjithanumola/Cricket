@@ -35,7 +35,7 @@ export function useGameAssets() {
                 const newAssets = { ...prev, [type]: success };
                 loadedCount++;
                 if (loadedCount === totalToLoad) {
-                    newAssets.all = newAssets.bat && newAssets.batsman && newAssets.dhBatsman && newAssets.ball && newAssets.grass;
+                    newAssets.all = true;
                 }
                 return newAssets;
             });
@@ -59,6 +59,21 @@ export function useGameAssets() {
         dhBatsmanImageRef.current.src = 'https://storage.googleapis.com/gemini-95-icons/demisbatsman.png';
         ballImageRef.current.src = 'https://storage.googleapis.com/gemini-95-icons/cricketball.png';
         grassImageRef.current.src = 'https://storage.googleapis.com/gemini-95-icons/grass.jpg';
+
+        // 3-second safety timeout to bypass loading screen if assets fail or hang
+        const safetyTimeout = setTimeout(() => {
+            setAssetsLoaded(prev => {
+                if (!prev.all) {
+                    console.warn("Asset loading timed-out. Bypassing and starting with fallbacks.");
+                    return { ...prev, all: true };
+                }
+                return prev;
+            });
+        }, 3000);
+
+        return () => {
+            clearTimeout(safetyTimeout);
+        };
         // The effect runs only once on mount.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);

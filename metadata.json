@@ -3,5 +3,5 @@
   "description": "An arcade cricket game where Gemini is your personal, live sports commentator.",
   "requestFramePermissions": [],
   "prompt": "",
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

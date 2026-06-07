@@ -10,7 +10,21 @@ import { decodeUsed, decodeAudioDataUsed } from '../utils/audioUtils';
 import { createPromptForLiveCommentary } from '../utils/commentaryUtils';
 import { GameContextForCommentary } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+let aiInstance: GoogleGenAI | null = null;
+function getAI(): GoogleGenAI {
+    if (!aiInstance) {
+        const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+        aiInstance = new GoogleGenAI({
+            apiKey: apiKey || "MISSING",
+            httpOptions: {
+                headers: {
+                    'User-Agent': 'aistudio-build'
+                }
+            }
+        });
+    }
+    return aiInstance;
+}
 
 const initialSystemPrompt = `You are an expert live cricket commentator for an exciting arcade game. Your task is to transform factual game data into immediate, dynamic, and engaging spoken commentary.
 
@@ -112,6 +126,14 @@ export function useLiveCommentary() {
 
     const initLiveSession = useCallback(async () => {
         if (liveSessionRef.current) { try { await liveSessionRef.current.close(); } catch (e) { console.warn("Error closing existing live session:", e); } liveSessionRef.current = null; isLiveSessionReadyRef.current = false; }
+        
+        const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            setCommentaryStatus("🔌 Comm. Offline (No Key)");
+            console.warn("No Gemini API key is configured. Game will continue with local audio.");
+            return;
+        }
+
         try { await initAudioContext(); } catch (e: any) { setCommentaryStatus(`⚠️ Audio Err`); throw e; }
         if (!audioCtxRef.current || audioCtxRef.current.state !== 'running') { setCommentaryStatus("⚠️ Audio System Err"); throw new Error("AudioContext not running"); }
 
@@ -124,7 +146,7 @@ export function useLiveCommentary() {
 
         try {
             setCommentaryStatus("🔌 Connecting Live...");
-            const session = await ai.live.connect({
+            const session = await getAI().live.connect({
                 model: modelName,
                 callbacks: {
                     onopen: () => { isLiveSessionReadyRef.current = true; setCommentaryStatus("🎙️ Live Ready"); },
@@ -166,7 +188,8 @@ export function useLiveCommentary() {
     }, [initAudioContext, scheduleAudioCompletionCheck]);
 
     const triggerDynamicCommentary = useCallback(async (context: GameContextForCommentary): Promise<boolean> => {
-        if (!process.env.API_KEY || !liveSessionRef.current || !isLiveSessionReadyRef.current) { return false; }
+        const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+        if (!apiKey || !liveSessionRef.current || !isLiveSessionReadyRef.current) { return false; }
         try {
             setCommentaryStatus("📝 Creating prompt...");
             const promptText = await createPromptForLiveCommentary(context);
