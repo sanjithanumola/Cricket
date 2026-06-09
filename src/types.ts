@@ -6,7 +6,19 @@
 // Fix: Removed self-import of GameState that was causing a conflict.
 export type GameState = 'PLAYER_SELECT' | 'IDLE' | 'LOADING' | 'READY' | 'BOWLING' | 'HITTING' | 'BALL_IN_PLAY' | 'OUT' | 'BALL_DEAD' | 'GAME_OVER' | 'TUTORIAL';
 export type ShotDirection = 'STRAIGHT' | 'OFF' | 'LEG';
-export type PlayerCharacter = 'IND' | 'AUS';
+export type PlayerCharacter = 'IND' | 'AUS' | 'ENG' | 'NZ';
+export type UserRole = 'BAT' | 'BOWL';
+export type MatchTargetMode = 'EASY' | 'MEDIUM' | 'HARD' | 'RANDOM' | 'UNLIMITED' | 'FULL_MATCH';
+
+export interface GameSettings {
+    battingTeam: PlayerCharacter;
+    bowlingTeam: PlayerCharacter;
+    userRole: UserRole;
+    totalBalls: number;
+    maxWickets: number;
+    targetMode: MatchTargetMode;
+}
+
 export type TutorialStep = 'NONE' | 'INTRO' | 'AIM_OFF' | 'AIM_STRAIGHT' | 'AIM_LEG' | 'AIM_DONE' | 'SWING_INTRO' | 'SWING_PRACTICE' | 'COMPLETE';
 
 

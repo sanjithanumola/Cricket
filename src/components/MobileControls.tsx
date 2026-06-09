@@ -4,16 +4,17 @@
 */
 
 import React from 'react';
-import { ShotDirection, TutorialStep } from '../types';
+import { ShotDirection, TutorialStep, UserRole } from '../types';
 
 interface MobileControlsProps {
     shotDirection: ShotDirection;
     onDirectionChange: (direction: ShotDirection) => void;
     onSwing: () => void;
     tutorialStep: TutorialStep;
+    userRole?: UserRole;
 }
 
-const MobileControls: React.FC<MobileControlsProps> = ({ shotDirection, onDirectionChange, onSwing, tutorialStep }) => {
+const MobileControls: React.FC<MobileControlsProps> = ({ shotDirection, onDirectionChange, onSwing, tutorialStep, userRole }) => {
     
     const isOffHighlighted = tutorialStep === 'AIM_OFF';
     const isStraightHighlighted = tutorialStep === 'AIM_STRAIGHT';
@@ -49,8 +50,13 @@ const MobileControls: React.FC<MobileControlsProps> = ({ shotDirection, onDirect
 
             {/* Action Pad on the Right */}
             <div className="mobile-action-pad">
-                <button className={`mobile-btn mobile-swing-btn ${isSwingHighlighted ? 'tutorial-highlight' : ''}`} onClick={onSwing} aria-label="Swing bat">
-                    SWING
+                <button 
+                    className={`mobile-btn mobile-swing-btn ${isSwingHighlighted ? 'tutorial-highlight' : ''}`} 
+                    onClick={onSwing} 
+                    aria-label={userRole === 'BOWL' ? 'Bowl delivery' : 'Swing bat'}
+                    style={{ backgroundColor: userRole === 'BOWL' ? '#48BB78' : '#E13A7B' }}
+                >
+                    {userRole === 'BOWL' ? 'BOWL' : 'SWING'}
                 </button>
             </div>
         </div>

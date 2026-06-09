@@ -4,7 +4,7 @@
 */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { GameState, ShotDirection, Ball, Batsman, Bat, Stumps, GameContextForCommentary, AssetsLoaded, TutorialStep } from '../types';
+import { GameState, ShotDirection, Ball, Batsman, Bat, Stumps, GameContextForCommentary, AssetsLoaded, TutorialStep, PlayerCharacter, UserRole, MatchTargetMode, GameSettings } from '../types';
 import {
     CANVAS_WIDTH, CANVAS_HEIGHT, DEFAULT_TOTAL_BALLS, DEFAULT_MAX_WICKETS, MIN_BALL_SPEED_Y, MAX_BALL_SPEED_Y,
     NUM_STUMPS, STUMPS_WIDTH, STUMP_GAP, BATSMAN_SPRITE_DISPLAY_HEIGHT, STUMPS_HEIGHT,
@@ -38,15 +38,27 @@ export function useGameEngine({ assets, commentary }: UseGameEngineProps) {
     const [score, setScore] = useState(0);
     const [targetScore, setTargetScore] = useState(0);
     const [ballsBowled, setBallsBowled] = useState(0);
-    const [totalBalls] = useState(DEFAULT_TOTAL_BALLS);
+    const [totalBalls, setTotalBalls] = useState(DEFAULT_TOTAL_BALLS);
     const [wickets, setWickets] = useState(0);
-    const [maxWickets] = useState(DEFAULT_MAX_WICKETS);
+    const [maxWickets, setMaxWickets] = useState(DEFAULT_MAX_WICKETS);
     const [currentGameState, setCurrentGameState] = useState<GameState>('LOADING');
     const [message, setMessage] = useState("Loading Assets...");
     const [shotDirection, setShotDirection] = useState<ShotDirection>('STRAIGHT');
     const [impactEffectText, setImpactEffectText] = useState("");
     const [showImpactEffect, setShowImpactEffect] = useState(false);
     const [tutorialStep, setTutorialStep] = useState<TutorialStep>('NONE');
+
+    // Two-Innings Match States
+    const [innings, setInnings] = useState<1 | 2>(1);
+    const [firstInningsScore, setFirstInningsScore] = useState<number | null>(null);
+    const [isInningsBreak, setIsInningsBreak] = useState(false);
+    const [bowlingTargetX, setBowlingTargetX] = useState<number>(CANVAS_WIDTH / 2);
+
+    // New Game Setup State
+    const [battingTeam, setBattingTeam] = useState<PlayerCharacter>('IND');
+    const [bowlingTeam, setBowlingTeam] = useState<PlayerCharacter>('AUS');
+    const [userRole, setUserRole] = useState<UserRole>('BAT');
+    const [targetMode, setTargetMode] = useState<MatchTargetMode>('RANDOM');
 
     // Game Elements
     const [ball, setBall] = useState<Ball | null>(null);
@@ -56,8 +68,8 @@ export function useGameEngine({ assets, commentary }: UseGameEngineProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     // --- Refs for State Access in Callbacks/Loops ---
-    const stateRefs = useRef({ score, targetScore, ballsBowled, wickets, currentGameState, shotDirection, tutorialStep, ball, batsman, bat, stumps, assetsLoaded: assets.assetsLoaded }).current;
-    Object.assign(stateRefs, { score, targetScore, ballsBowled, wickets, currentGameState, shotDirection, tutorialStep, ball, batsman, bat, stumps, assetsLoaded: assets.assetsLoaded });
+    const stateRefs = useRef({ score, targetScore, ballsBowled, wickets, currentGameState, shotDirection, tutorialStep, ball, batsman, bat, stumps, assetsLoaded: assets.assetsLoaded, battingTeam, bowlingTeam, userRole, totalBalls, maxWickets, targetMode, innings, firstInningsScore, isInningsBreak, bowlingTargetX }).current;
+    Object.assign(stateRefs, { score, targetScore, ballsBowled, wickets, currentGameState, shotDirection, tutorialStep, ball, batsman, bat, stumps, assetsLoaded: assets.assetsLoaded, battingTeam, bowlingTeam, userRole, totalBalls, maxWickets, targetMode, innings, firstInningsScore, isInningsBreak, bowlingTargetX });
 
     // --- Refs for Timers and Logic Flow ---
     const gameLoopIdRef = useRef<number | null>(null);
@@ -66,6 +78,7 @@ export function useGameEngine({ assets, commentary }: UseGameEngineProps) {
     const nextBallTimeoutIdRef = useRef<number | null>(null);
     const isExecutingNextBallLogicRef = useRef(false);
     const deliveryContextRef = useRef<{ wasMiss?: boolean }>({});
+    const aiSwingTriggeredRef = useRef(false);
 
     // --- UI & Message Functions ---
     const showAppMessage = useCallback((text: string, duration = 2000) => {
@@ -90,10 +103,44 @@ export function useGameEngine({ assets, commentary }: UseGameEngineProps) {
         setStumps({ x: CANVAS_WIDTH / 2 - (NUM_STUMPS * STUMPS_WIDTH + (NUM_STUMPS - 1) * STUMP_GAP) / 2, y: newBatsmanData.y + (BATSMAN_SPRITE_DISPLAY_HEIGHT / 2) - STUMPS_HEIGHT - 10, width: STUMPS_WIDTH, height: STUMPS_HEIGHT, hit: false });
     }, []);
 
-    const playerWasSelected = useCallback(() => {
+    const setupWasCompleted = useCallback((settings: GameSettings) => {
+        setBattingTeam(settings.battingTeam);
+        setBowlingTeam(settings.bowlingTeam);
+        setUserRole(settings.userRole);
+        setTotalBalls(settings.totalBalls);
+        setMaxWickets(settings.maxWickets);
+        setTargetMode(settings.targetMode);
+
+        setInnings(1);
+        setFirstInningsScore(null);
+        setIsInningsBreak(false);
+
+        // Generate Target
+        let newTarget = 30;
+        if (settings.targetMode === 'EASY') {
+            newTarget = 15;
+        } else if (settings.targetMode === 'MEDIUM') {
+            newTarget = 30;
+        } else if (settings.targetMode === 'HARD') {
+            newTarget = 50;
+        } else if (settings.targetMode === 'FULL_MATCH') {
+            newTarget = 0; // Innings 1 has no target score
+        } else if (settings.targetMode === 'UNLIMITED') {
+            newTarget = 0;
+        } else {
+            newTarget = Math.floor(Math.random() * 25) + 15;
+        }
+        setTargetScore(newTarget);
+
         if (stateRefs.currentGameState === 'PLAYER_SELECT') {
-            setCurrentGameState('TUTORIAL');
-            setTutorialStep('INTRO');
+            if (settings.userRole === 'BOWL' || settings.targetMode === 'FULL_MATCH') {
+                setCurrentGameState('IDLE');
+                setTutorialStep('NONE');
+                setMessage("Press Start Game to begin!");
+            } else {
+                setCurrentGameState('TUTORIAL');
+                setTutorialStep('INTRO');
+            }
         }
     }, [stateRefs]);
 
@@ -106,30 +153,115 @@ export function useGameEngine({ assets, commentary }: UseGameEngineProps) {
             wickets: finalState.wickets, ballsBowled: finalState.ballsBowled, totalBalls,
         };
         let endMsg = "";
-        if (finalState.score >= finalState.targetScore && finalState.targetScore > 0) {
-            endMsg = `YOU WON! Target: ${finalState.targetScore} Score: ${finalState.score}`;
-            context.event = "gameWon";
-            triggerImpactEffect("YOU WON!");
-        } else if (finalState.wickets >= maxWickets) {
-            endMsg = `Game Over! BOWLED! Target: ${finalState.targetScore} Score: ${finalState.score}`;
-            context.event = "gameOverWickets";
-            triggerImpactEffect("GAME OVER!");
+
+        if (finalState.targetMode === 'FULL_MATCH' && finalState.firstInningsScore !== null) {
+            // Full 2-innings match result calculations
+            const runsToWin = finalState.targetScore; // firstInningsScore + 1
+            const scoreInnings2 = finalState.score;
+
+            if (finalState.userRole === 'BAT') {
+                // User chased in Innings 2
+                if (scoreInnings2 >= runsToWin) {
+                    endMsg = `MATCH WON! You chased down AI's score of ${finalState.firstInningsScore} to win!`;
+                    context.event = "gameWon";
+                    triggerImpactEffect("YOU WON!");
+                } else {
+                    endMsg = `MATCH LOST! You fell short of AI's score by ${runsToWin - scoreInnings2 - 1} runs.`;
+                    context.event = "gameOverBalls";
+                    triggerImpactEffect("GAME OVER!");
+                }
+            } else {
+                // User defended in Innings 2 (AI batting)
+                if (scoreInnings2 >= runsToWin) {
+                    endMsg = `MATCH LOST! AI chased down your score of ${finalState.firstInningsScore} to win.`;
+                    context.event = "gameOverBalls";
+                    triggerImpactEffect("GAME OVER!");
+                } else {
+                    const runsDefended = runsToWin - 1 - scoreInnings2;
+                    endMsg = `MATCH WON! You defended ${finalState.firstInningsScore} and won by ${runsDefended} runs!`;
+                    context.event = "gameWon";
+                    triggerImpactEffect("YOU WON!");
+                }
+            }
         } else {
-            endMsg = `Game Over! Overs Up! Target: ${finalState.targetScore} Score: ${finalState.score}`;
-            context.event = "gameOverBalls";
-            triggerImpactEffect("GAME OVER!");
+            // Quick match target chase
+            if (finalState.score >= finalState.targetScore && finalState.targetScore > 0) {
+                endMsg = `${finalState.userRole === 'BAT' ? 'YOU WON!' : 'AI WON!'} Target: ${finalState.targetScore} Score: ${finalState.score}`;
+                context.event = "gameWon";
+                triggerImpactEffect("YOU WON!");
+            } else if (finalState.wickets >= maxWickets) {
+                endMsg = `${finalState.userRole === 'BAT' ? 'YOU LOST!' : 'YOU WON!'} All Out! Target: ${finalState.targetScore} Score: ${finalState.score}`;
+                context.event = "gameOverWickets";
+                triggerImpactEffect("GAME OVER!");
+            } else {
+                endMsg = `${finalState.userRole === 'BAT' ? 'YOU LOST!' : 'YOU WON!'} Overs Up! Target: ${finalState.targetScore} Score: ${finalState.score}`;
+                context.event = "gameOverBalls";
+                triggerImpactEffect("GAME OVER!");
+            }
         }
         showAppMessage(endMsg);
         commentary.triggerDynamicCommentary(context);
     }, [commentary, maxWickets, totalBalls, showAppMessage, triggerImpactEffect]);
     
+    const completeFirstInnings = useCallback(async (finalScore: number) => {
+        setFirstInningsScore(finalScore);
+        setIsInningsBreak(true);
+        setCurrentGameState('GAME_OVER'); // Pause game interaction until Innings 2 starts
+
+        const sideWord = stateRefs.userRole === 'BAT' ? 'You' : 'AI';
+        const targetVal = finalScore + 1;
+        showAppMessage(`Innings 1 Over! ${sideWord} set a target of ${targetVal} runs! Click 'START INNINGS 2' below to swap roles.`, 0);
+
+        try {
+            await commentary.triggerDynamicCommentary({
+                event: "dotBallKeeper",
+                score: finalScore,
+                targetScore: 0,
+                wickets: stateRefs.wickets,
+                ballsBowled: stateRefs.ballsBowled,
+                totalBalls
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    }, [stateRefs, commentary, totalBalls, showAppMessage]);
+
     const bowlLogic = useCallback(() => {
         if (stateRefs.currentGameState !== 'READY') return;
         setCurrentGameState('BOWLING');
         deliveryContextRef.current = {};
+        aiSwingTriggeredRef.current = false; // Reset AI batsman swing indicator
+
+        let targetX = CANVAS_WIDTH / 2;
+        // If user is bowling, ball pitch direction is controlled by user's shot direction / billing target
+        if (stateRefs.userRole === 'BOWL') {
+            targetX = stateRefs.bowlingTargetX;
+        } else {
+            // Computer bowling: random variation
+            targetX = CANVAS_WIDTH / 2 + (Math.random() - 0.5) * 40;
+        }
+
         const randomSpeed = MIN_BALL_SPEED_Y + Math.random() * (MAX_BALL_SPEED_Y - MIN_BALL_SPEED_Y);
-        setBall(prev => prev ? { ...prev, x: CANVAS_WIDTH / 2 + (Math.random() - 0.5) * 40, y: CANVAS_HEIGHT - 38, z: 0, dz: 0, dx: 0, dy: -randomSpeed, trail: [] } : null);
-        showAppMessage("Bowler running in...", 2000);
+        // Calculate dx based on targetX
+        const flyDuration = (CANVAS_HEIGHT - 38 - 120) / randomSpeed;
+        const speedX = (targetX - (CANVAS_WIDTH / 2)) / flyDuration;
+
+        setBall(prev => prev ? { 
+            ...prev, 
+            x: CANVAS_WIDTH / 2, 
+            y: CANVAS_HEIGHT - 38, 
+            z: 0, 
+            dz: 0, 
+            dx: speedX, 
+            dy: -randomSpeed, 
+            trail: [] 
+        } : null);
+
+        if (stateRefs.userRole === 'BOWL') {
+            showAppMessage(`You bowled a ${stateRefs.shotDirection} delivery!`, 2000);
+        } else {
+            showAppMessage("Bowler running in...", 2000);
+        }
     }, [showAppMessage, stateRefs]);
     
     const executeNextBallLogic = useCallback(async () => {
@@ -146,17 +278,35 @@ export function useGameEngine({ assets, commentary }: UseGameEngineProps) {
             return;
         }
         
-        const { score, wickets, ballsBowled, targetScore } = latestState;
-        if (wickets >= maxWickets || ballsBowled >= totalBalls || (targetScore > 0 && score >= targetScore)) {
-            gameOver(latestState);
+        const { score, wickets, ballsBowled, targetScore, userRole, targetMode, innings } = latestState;
+        
+        let isInningsFinished = false;
+        if (targetMode === 'FULL_MATCH' && innings === 1) {
+            // First Innings setting a target finishes when wickets or overs run out
+            isInningsFinished = (wickets >= maxWickets || ballsBowled >= totalBalls);
+        } else {
+            // Standard target-chasing side
+            isInningsFinished = (wickets >= maxWickets || ballsBowled >= totalBalls || (targetScore > 0 && score >= targetScore));
+        }
+
+        if (isInningsFinished) {
+            if (targetMode === 'FULL_MATCH' && innings === 1) {
+                completeFirstInnings(score);
+            } else {
+                gameOver(latestState);
+            }
         } else {
             setCurrentGameState('READY');
             initGameElements();
-            showAppMessage("Bowler is ready...", 0);
-            bowlTimeoutIdRef.current = window.setTimeout(bowlLogic, 1000 + Math.random() * 900);
+            if (userRole === 'BOWL') {
+                showAppMessage("Your Turn! Aim your pitch and press SPACEBAR/BOWL to Bowl!", 0);
+            } else {
+                showAppMessage("Bowler is ready...", 0);
+                bowlTimeoutIdRef.current = window.setTimeout(bowlLogic, 1000 + Math.random() * 900);
+            }
         }
         isExecutingNextBallLogicRef.current = false;
-    }, [gameOver, initGameElements, showAppMessage, commentary, maxWickets, totalBalls, stateRefs, bowlLogic]);
+    }, [gameOver, initGameElements, showAppMessage, commentary, maxWickets, totalBalls, stateRefs, bowlLogic, completeFirstInnings]);
 
 
     const scheduleNextBall = useCallback((delay: number) => {
@@ -292,21 +442,62 @@ export function useGameEngine({ assets, commentary }: UseGameEngineProps) {
     }, [stateRefs, assets.batHitSoundRef, showAppMessage, triggerImpactEffect, totalBalls, maxWickets, gameOver, commentary, bowlTutorialBall]);
 
     const swingBat = useCallback(() => {
-        if (stateRefs.currentGameState === 'BOWLING') {
-            setCurrentGameState('HITTING');
-            handleHit();
+        const { currentGameState: cS, userRole: uR } = stateRefs;
+        if (cS === 'BOWLING') {
+            if (uR === 'BAT') {
+                setCurrentGameState('HITTING');
+                handleHit();
+            }
+        } else if (cS === 'READY') {
+            if (uR === 'BOWL') {
+                bowlLogic();
+            }
         }
-    }, [stateRefs, handleHit]);
+    }, [stateRefs, handleHit, bowlLogic]);
 
 
     const updateBallPosition = useCallback(() => {
-        const { currentGameState: cState, ball: cBall, stumps: cStumps, bat: cBat, score: cScore, wickets: cWickets, ballsBowled: cBalls, targetScore: cTarget, tutorialStep: cTutStep } = stateRefs;
+        const { currentGameState: cState, ball: cBall, stumps: cStumps, bat: cBat, score: cScore, wickets: cWickets, ballsBowled: cBalls, targetScore: cTarget, tutorialStep: cTutStep, userRole } = stateRefs;
         if (!cBall) return;
         const isTutorialSwing = cTutStep === 'SWING_PRACTICE';
 
         if (cState === 'BOWLING' || cState === 'HITTING') {
             if (!cStumps) return;
             const newBall = { ...cBall, y: cBall.y + cBall.dy };
+
+            // --- AI Batsman Swing logic when User is Bowling ---
+            if (userRole === 'BOWL' && cState === 'BOWLING' && !aiSwingTriggeredRef.current) {
+                const swingThresholdY = 135 + (Math.random() - 0.5) * 15; // Sweet spot coordinates 120-150
+                if (newBall.y <= swingThresholdY) {
+                    aiSwingTriggeredRef.current = true;
+                    
+                    const pitchDiff = Math.abs(newBall.x - CANVAS_WIDTH / 2);
+                    let hitChance = 0.82;
+                    if (pitchDiff > 35) {
+                        hitChance = 0.40; // Wider pitches are harder to connect on
+                    }
+                    
+                    if (Math.random() < hitChance) {
+                        // AI batsman swings and connects! Choose a random direction
+                        const directions: ShotDirection[] = ['STRAIGHT', 'OFF', 'LEG'];
+                        const chosenDir = directions[Math.floor(Math.random() * directions.length)];
+                        setShotDirection(chosenDir);
+                        
+                        setCurrentGameState('HITTING');
+                        setTimeout(() => {
+                            handleHit();
+                        }, 0);
+                    } else {
+                        // AI batsman swings and misses
+                        const vSF = Math.random() < 0.5 ? -1 : 1;
+                        setBat(p => p ? { ...p, swinging: true, swingAngle: vSF * p.maxSwingAngle } : null);
+                        window.setTimeout(() => setBat(p => p ? { ...p, swinging: false } : null), 200);
+                        showAppMessage("AI swings and misses!", 1500);
+                        triggerImpactEffect("MISS!");
+                        deliveryContextRef.current = { wasMiss: true };
+                    }
+                }
+            }
 
             const canBeBowled = !(cBat?.swinging) || cState === 'BOWLING';
             if (canBeBowled && !isTutorialSwing && newBall.y - newBall.radius < cStumps.y + STUMPS_HEIGHT && !cStumps.hit &&
@@ -414,20 +605,111 @@ export function useGameEngine({ assets, commentary }: UseGameEngineProps) {
         if (messageTimeoutIdRef.current) clearTimeout(messageTimeoutIdRef.current);
         if (commentary.safetyNetNextBallTimeoutRef.current) clearTimeout(commentary.safetyNetNextBallTimeoutRef.current);
         commentary.pendingNextBallActionRef.current = null;
+        aiSwingTriggeredRef.current = false;
         
         setScore(0); setWickets(0); setBallsBowled(0);
-        const newTarget = Math.floor(Math.random() * 20) + 15;
-        setTargetScore(newTarget); initGameElements();
+        setInnings(1);
+        setFirstInningsScore(null);
+        setIsInningsBreak(false);
 
-        try { await commentary.initLiveSession(); await commentary.triggerDynamicCommentary({ event: "gameStart", targetScore: newTarget, totalBalls });
+        let newTarget = 30;
+        if (targetMode === 'EASY') {
+            newTarget = 15;
+        } else if (targetMode === 'MEDIUM') {
+            newTarget = 30;
+        } else if (targetMode === 'HARD') {
+            newTarget = 50;
+        } else if (targetMode === 'FULL_MATCH') {
+            newTarget = 0; // Innings 1 sets target
+        } else if (targetMode === 'UNLIMITED') {
+            newTarget = 0;
+        } else {
+            newTarget = Math.floor(Math.random() * 25) + 15;
+        }
+        setTargetScore(newTarget);
+        initGameElements();
+        setBowlingTargetX(CANVAS_WIDTH / 2);
+
+        try { 
+            await commentary.initLiveSession(); 
+            await commentary.triggerDynamicCommentary({ 
+                event: "gameStart", 
+                targetScore: newTarget, 
+                totalBalls,
+                runsScoredThisBall: 0
+            });
         } catch (e) { console.error("Failed to initialize commentary:", e); showAppMessage("Commentary failed to connect.", 3000); }
 
         setCurrentGameState('READY');
-        bowlTimeoutIdRef.current = window.setTimeout(bowlLogic, 2000);
-    }, [currentGameState, initGameElements, commentary, totalBalls, showAppMessage, bowlLogic]);
+        if (userRole === 'BOWL') {
+            showAppMessage("Your turn to bowl! Aim and press SPACEBAR / BOWL!", 0);
+        } else {
+            bowlTimeoutIdRef.current = window.setTimeout(bowlLogic, 2000);
+        }
+    }, [currentGameState, initGameElements, commentary, totalBalls, showAppMessage, bowlLogic, targetMode, userRole]);
+
+    const startInnings2 = useCallback(async () => {
+        const latestState = stateRefs;
+        if (latestState.firstInningsScore === null) return;
+
+        const nextRole = latestState.userRole === 'BAT' ? 'BOWL' : 'BAT';
+        
+        // Swap teams and roles
+        const nextBatting = latestState.bowlingTeam;
+        const nextBowling = latestState.battingTeam;
+        
+        setBattingTeam(nextBatting);
+        setBowlingTeam(nextBowling);
+        setUserRole(nextRole);
+        setInnings(2);
+        setIsInningsBreak(false);
+        
+        // Reset scores for second innings
+        setScore(0);
+        setWickets(0);
+        setBallsBowled(0);
+        
+        const newTarget = latestState.firstInningsScore + 1;
+        setTargetScore(newTarget);
+        
+        initGameElements();
+        setBowlingTargetX(CANVAS_WIDTH / 2);
+        aiSwingTriggeredRef.current = false;
+        
+        setCurrentGameState('READY');
+        
+        if (nextRole === 'BOWL') {
+            showAppMessage(`Defend your score of ${latestState.firstInningsScore}! Aim & Bowl!`, 4000);
+        } else {
+            showAppMessage(`Chase target of ${newTarget}! Press Space to swing!`, 4000);
+            bowlTimeoutIdRef.current = window.setTimeout(bowlLogic, 1500);
+        }
+
+        try {
+            await commentary.triggerDynamicCommentary({
+                event: "gameStart",
+                targetScore: newTarget,
+                totalBalls,
+                runsScoredThisBall: 0
+            });
+        } catch (e) {
+            console.error("Commentary error:", e);
+        }
+    }, [stateRefs, initGameElements, bowlLogic, showAppMessage, totalBalls, commentary]);
 
     const setShotDirectionWithTutorial = useCallback((dir: ShotDirection) => {
         setShotDirection(dir);
+        
+        if (stateRefs.userRole === 'BOWL') {
+            if (dir === 'OFF') {
+                setBowlingTargetX(CANVAS_WIDTH / 2 - 30);
+            } else if (dir === 'LEG') {
+                setBowlingTargetX(CANVAS_WIDTH / 2 + 30);
+            } else {
+                setBowlingTargetX(CANVAS_WIDTH / 2);
+            }
+        }
+
         const { currentGameState: cS, tutorialStep: tS } = stateRefs;
         if (cS === 'TUTORIAL') {
             if (dir === 'OFF' && tS === 'AIM_OFF') setTutorialStep('AIM_STRAIGHT');
@@ -469,7 +751,7 @@ export function useGameEngine({ assets, commentary }: UseGameEngineProps) {
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            const cS = stateRefs.currentGameState; const tS = stateRefs.tutorialStep;
+            const cS = stateRefs.currentGameState; const tS = stateRefs.tutorialStep; const uR = stateRefs.userRole;
 
             if (cS === 'TUTORIAL') {
                 if (e.code === 'ArrowLeft' && tS === 'AIM_OFF') setTutorialStep('AIM_STRAIGHT');
@@ -477,13 +759,36 @@ export function useGameEngine({ assets, commentary }: UseGameEngineProps) {
                 else if (e.code === 'ArrowRight' && tS === 'AIM_LEG') setTutorialStep('AIM_DONE');
             }
 
-            if (e.code === 'ArrowLeft') setShotDirection('OFF');
-            else if (e.code === 'ArrowRight') setShotDirection('LEG');
-            else if (e.code === 'ArrowUp') setShotDirection('STRAIGHT');
+            if (uR === 'BOWL' && cS === 'READY') {
+                if (e.code === 'ArrowLeft') {
+                    setBowlingTargetX(prev => {
+                        const next = Math.max(CANVAS_WIDTH / 2 - 40, prev - 8);
+                        if (next < CANVAS_WIDTH / 2 - 15) setShotDirection('OFF');
+                        else if (next > CANVAS_WIDTH / 2 + 15) setShotDirection('LEG');
+                        else setShotDirection('STRAIGHT');
+                        return next;
+                    });
+                } else if (e.code === 'ArrowRight') {
+                    setBowlingTargetX(prev => {
+                        const next = Math.min(CANVAS_WIDTH / 2 + 40, prev + 8);
+                        if (next < CANVAS_WIDTH / 2 - 15) setShotDirection('OFF');
+                        else if (next > CANVAS_WIDTH / 2 + 15) setShotDirection('LEG');
+                        else setShotDirection('STRAIGHT');
+                        return next;
+                    });
+                } else if (e.code === 'ArrowUp') {
+                    setBowlingTargetX(CANVAS_WIDTH / 2);
+                    setShotDirection('STRAIGHT');
+                }
+            } else {
+                if (e.code === 'ArrowLeft') setShotDirection('OFF');
+                else if (e.code === 'ArrowRight') setShotDirection('LEG');
+                else if (e.code === 'ArrowUp') setShotDirection('STRAIGHT');
+            }
 
             if (e.code === 'Space') {
                 e.preventDefault();
-                if (cS === 'BOWLING') swingBat();
+                if (cS === 'BOWLING' || cS === 'READY') swingBat();
                 else if (cS === 'IDLE' || cS === 'GAME_OVER') startGame();
             }
         };
@@ -495,6 +800,7 @@ export function useGameEngine({ assets, commentary }: UseGameEngineProps) {
     return {
         score, targetScore, ballsBowled, totalBalls, wickets, maxWickets, currentGameState,
         message, shotDirection, ball, batsman, bat, stumps, canvasRef, impactEffectText,
-        showImpactEffect, tutorialStep, startGame, swingBat, setShotDirection: setShotDirectionWithTutorial, playerWasSelected
+        showImpactEffect, tutorialStep, startGame, swingBat, setShotDirection: setShotDirectionWithTutorial, setupWasCompleted,
+        battingTeam, bowlingTeam, userRole, targetMode, innings, firstInningsScore, isInningsBreak, bowlingTargetX, startInnings2
     };
 }

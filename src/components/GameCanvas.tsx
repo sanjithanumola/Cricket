@@ -4,7 +4,7 @@
 */
 
 import React, { useEffect, useRef, useLayoutEffect } from 'react';
-import { Ball, Batsman, Bat, Stumps, GameState, ShotDirection, AssetsLoaded } from '../types';
+import { Ball, Batsman, Bat, Stumps, GameState, ShotDirection, AssetsLoaded, PlayerCharacter, UserRole } from '../types';
 import {
     PITCH_COLOR, FIELD_COLOR, STUMPS_COLOR, BALL_FALLBACK_COLOR, BAT_FALLBACK_COLOR, BATSMAN_FALLBACK_COLOR, CREASE_COLOR,
     BALL_RADIUS, BALL_SPRITE_DISPLAY_WIDTH,
@@ -27,11 +27,16 @@ interface GameCanvasProps {
     batsmanImage: HTMLImageElement;
     ballImage: HTMLImageElement;
     grassImage: HTMLImageElement;
+    battingTeam: PlayerCharacter;
+    bowlingTeam: PlayerCharacter;
+    bowlingTargetX?: number;
+    userRole?: UserRole;
 }
 
 const GameCanvas: React.FC<GameCanvasProps> = ({
     canvasRef, ball, batsman, bat, stumps, gameState, shotDirection,
-    assetsLoaded, batImage, batsmanImage, ballImage, grassImage
+    assetsLoaded, batImage, batsmanImage, ballImage, grassImage,
+    battingTeam, bowlingTeam, bowlingTargetX = CANVAS_WIDTH / 2, userRole = 'BAT'
 }) => {
     const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
 
@@ -85,6 +90,14 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
         ctx.fillStyle = PITCH_COLOR;
         ctx.fillRect(pX, pY, pW, pH);
 
+        // Watermark matchup
+        ctx.save();
+        ctx.font = "12px 'Press Start 2P'";
+        ctx.fillStyle = "rgba(40, 25, 10, 0.25)";
+        ctx.textAlign = "center";
+        ctx.fillText(`${battingTeam} VS ${bowlingTeam}`, CANVAS_WIDTH / 2, pH / 2 + 30);
+        ctx.restore();
+
         // Then draw the white crease lines on top
         ctx.strokeStyle = CREASE_COLOR;
         ctx.lineWidth = 2;
@@ -95,6 +108,46 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
         ctx.beginPath(); ctx.moveTo(pX + pW, popY); ctx.lineTo(pX + pW, popY + retL); ctx.stroke();
         const bowlY = CANVAS_HEIGHT - (cStumps.y + STUMPS_HEIGHT + 5);
         ctx.beginPath(); ctx.moveTo(pX, bowlY); ctx.lineTo(pX + pW, bowlY); ctx.stroke();
+
+        // --- DRAW BOWLING TARGET RETICLE if user is bowling and game is in active READY state ---
+        if (userRole === 'BOWL' && gameState === 'READY') {
+            ctx.save();
+            const targetY = 140; // pitching area sweet spot
+            ctx.strokeStyle = '#00FFCC';
+            ctx.lineWidth = 1.5;
+            
+            // Draw outer neon dashed circle
+            ctx.beginPath();
+            ctx.arc(bowlingTargetX, targetY, 12, 0, Math.PI * 2);
+            ctx.setLineDash([3, 3]);
+            ctx.stroke();
+            
+            // Draw central target dot
+            ctx.beginPath();
+            ctx.arc(bowlingTargetX, targetY, 1.5, 0, Math.PI * 2);
+            ctx.fillStyle = '#00FFCC';
+            ctx.fill();
+            
+            // Draw tactical crosshair lines
+            ctx.beginPath();
+            ctx.setLineDash([]);
+            ctx.moveTo(bowlingTargetX - 16, targetY);
+            ctx.lineTo(bowlingTargetX - 5, targetY);
+            ctx.moveTo(bowlingTargetX + 5, targetY);
+            ctx.lineTo(bowlingTargetX + 16, targetY);
+            ctx.moveTo(bowlingTargetX, targetY - 16);
+            ctx.lineTo(bowlingTargetX, targetY - 5);
+            ctx.moveTo(bowlingTargetX, targetY + 5);
+            ctx.lineTo(bowlingTargetX, targetY + 16);
+            ctx.stroke();
+            
+            // Draw pixel font target label
+            ctx.font = "6px 'Press Start 2P'";
+            ctx.fillStyle = '#00FFCC';
+            ctx.textAlign = 'center';
+            ctx.fillText("AIM", bowlingTargetX, targetY - 20);
+            ctx.restore();
+        }
     };
 
     const drawStumps = (ctx: CanvasRenderingContext2D, cStumps: Stumps | null) => {
@@ -120,6 +173,21 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
 
         const currentBatsmanWidth = batsmanSpriteReady ? BATSMAN_SPRITE_DISPLAY_WIDTH : FALLBACK_BATSMAN_WIDTH;
         const currentBatsmanHeight = batsmanSpriteReady ? BATSMAN_SPRITE_DISPLAY_HEIGHT : FALLBACK_BATSMAN_HEIGHT;
+
+        // Draw dynamic team name above batsman
+        ctx.save();
+        ctx.font = "8px 'Press Start 2P'";
+        let labelColor = '#fff';
+        if (battingTeam === 'IND') labelColor = '#63b3ed';
+        else if (battingTeam === 'AUS') labelColor = '#ecc94b';
+        else if (battingTeam === 'ENG') labelColor = '#e53e3e';
+        else if (battingTeam === 'NZ') labelColor = '#cbd5e0';
+        ctx.fillStyle = labelColor;
+        ctx.textAlign = 'center';
+        ctx.shadowColor = '#000';
+        ctx.shadowBlur = 3;
+        ctx.fillText(battingTeam, cBatsman.x, cBatsman.y - currentBatsmanHeight / 2 - 8);
+        ctx.restore();
 
         if (batsmanSpriteReady) {
             ctx.drawImage(batsmanImage, cBatsman.x - currentBatsmanWidth / 2, cBatsman.y - currentBatsmanHeight / 2, currentBatsmanWidth, currentBatsmanHeight);
@@ -249,7 +317,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
         }
 
 
-    }, [ball, batsman, bat, stumps, gameState, shotDirection, assetsLoaded, batImage, batsmanImage, ballImage, grassImage, canvasRef]);
+    }, [ball, batsman, bat, stumps, gameState, shotDirection, assetsLoaded, batImage, batsmanImage, ballImage, grassImage, canvasRef, bowlingTargetX, userRole]);
 
     return (
         <canvas
