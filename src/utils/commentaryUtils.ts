@@ -48,6 +48,9 @@ export async function createPromptForLiveCommentary(context: GameContextForComme
         case "wicketBowled":
             eventDescription = "Event: WICKET! The batsman is bowled.";
             break;
+        case "wicketCaught":
+            eventDescription = "Event: WICKET! The batsman played it in the air and is caught out by the fielder.";
+            break;
         case "missedHit":
             eventDescription = "Event: Dot ball. Batsman swung and missed.";
             break;

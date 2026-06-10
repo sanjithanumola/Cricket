@@ -77,7 +77,7 @@ export function useGameEngine({ assets, commentary }: UseGameEngineProps) {
     const bowlTimeoutIdRef = useRef<number | null>(null);
     const nextBallTimeoutIdRef = useRef<number | null>(null);
     const isExecutingNextBallLogicRef = useRef(false);
-    const deliveryContextRef = useRef<{ wasMiss?: boolean }>({});
+    const deliveryContextRef = useRef<{ wasMiss?: boolean; wasCaught?: boolean }>({});
     const aiSwingTriggeredRef = useRef(false);
 
     // --- UI & Message Functions ---
@@ -380,32 +380,176 @@ export function useGameEngine({ assets, commentary }: UseGameEngineProps) {
             let timingFactor = Math.abs(cBl.y - batEffectiveY);
             let strength = 10;
             let verticalStrength = 8;
+            let isWicketCaught = false;
 
-            if (timingFactor < batHeight * 0.25) {
-                rSTH = Math.random() < 0.6 ? 6 : 4;
-                showAppMessage(rSTH === 6 ? "PERFECT! SIXER!" : "SWEET! FOUR!", 2000);
-                if (rSTH === 6) triggerImpactEffect("SIX!"); else triggerImpactEffect("FOUR!");
-                strength = 17 + (Math.random() * 3);
-                verticalStrength = 18;
-                cE = rSTH === 6 ? 'hitSix' : 'hitFour';
-            } else if (timingFactor < batHeight * 0.45) {
-                rSTH = Math.random() < 0.8 ? 4 : (Math.random() < 0.7 ? 2 : 3);
-                showAppMessage(rSTH === 4 ? "Well Hit! FOUR!" : `${rSTH} Runs!`, 2000);
-                if (rSTH === 4) triggerImpactEffect("FOUR!");
-                else if (rSTH === 3) triggerImpactEffect("THREE RUNS!");
-                else if (rSTH === 2) triggerImpactEffect("TWO RUNS!");
-                strength = 14 + (Math.random() * 2);
-                verticalStrength = 12;
-                if (rSTH === 4) cE = 'hitFour'; else if (rSTH === 3) cE = 'hitThree'; else cE = 'hitTwo';
+            const rand = Math.random();
+
+            if (timingFactor < batHeight * 0.10) {
+                // Ultra Perfect Timing
+                if (rand < 0.70) {
+                    rSTH = 6;
+                    cE = 'hitSix';
+                    showAppMessage("MONSTER SIX! CLEAR OF THE STADIUM!", 2500);
+                    triggerImpactEffect("SIXER!");
+                    strength = 18 + (Math.random() * 4);
+                    verticalStrength = 22;
+                } else if (rand < 0.95) {
+                    rSTH = 4;
+                    cE = 'hitFour';
+                    showAppMessage("SWEET TIMING! CRACKING FOUR!", 2500);
+                    triggerImpactEffect("FOUR!");
+                    strength = 15 + (Math.random() * 3);
+                    verticalStrength = 13;
+                } else {
+                    rSTH = 2;
+                    cE = 'hitTwo';
+                    showAppMessage("Slashed away for an easy couple!", 2000);
+                    triggerImpactEffect("TWO RUNS!");
+                    strength = 11;
+                    verticalStrength = 4;
+                }
+            } else if (timingFactor < batHeight * 0.25) {
+                // Great Timing
+                if (rand < 0.15) {
+                    rSTH = 6;
+                    cE = 'hitSix';
+                    showAppMessage("SAILED HIGH! CRACKING SIX!", 2500);
+                    triggerImpactEffect("SIX!");
+                    strength = 16 + (Math.random() * 2);
+                    verticalStrength = 18;
+                } else if (rand < 0.65) {
+                    rSTH = 4;
+                    cE = 'hitFour';
+                    showAppMessage("Beautifully timed boundaries! FOUR!", 2000);
+                    triggerImpactEffect("FOUR!");
+                    strength = 14 + (Math.random() * 2);
+                    verticalStrength = 10;
+                } else if (rand < 0.80) {
+                    rSTH = 2;
+                    cE = 'hitTwo';
+                    showAppMessage("Pushed into the gap, hard running for TWO!", 2000);
+                    triggerImpactEffect("TWO!");
+                    strength = 11 + Math.random();
+                    verticalStrength = 6;
+                } else if (rand < 0.90) {
+                    rSTH = 3;
+                    cE = 'hitThree';
+                    showAppMessage("Pierced fielders, fantastic THREE runs!", 2000);
+                    triggerImpactEffect("THREE!");
+                    strength = 12 + Math.random();
+                    verticalStrength = 7;
+                } else {
+                    rSTH = 1;
+                    cE = 'hitOne';
+                    showAppMessage("Driven straight for a single.", 2000);
+                    triggerImpactEffect("ONE RUN");
+                    strength = 10;
+                    verticalStrength = 5;
+                }
+            } else if (timingFactor < batHeight * 0.40) {
+                // Decent Timing
+                if (rand < 0.10) {
+                    isWicketCaught = true;
+                    rSTH = 0;
+                    showAppMessage("In the air... has he mistimed it?", 3000);
+                    triggerImpactEffect("IN THE AIR!");
+                    strength = 11 + Math.random() * 3;
+                    verticalStrength = 16 + Math.random() * 4;
+                } else if (rand < 0.30) {
+                    rSTH = 4;
+                    cE = 'hitFour';
+                    showAppMessage("Found the gap! Pierced the outfield for FOUR!", 2000);
+                    triggerImpactEffect("FOUR!");
+                    strength = 13 + (Math.random() * 2);
+                    verticalStrength = 8;
+                } else if (rand < 0.40) {
+                    rSTH = 3;
+                    cE = 'hitThree';
+                    showAppMessage("Slid past field, ran THREE!", 2000);
+                    triggerImpactEffect("THREE RUNS!");
+                    strength = 11;
+                    verticalStrength = 6;
+                } else if (rand < 0.65) {
+                    rSTH = 2;
+                    cE = 'hitTwo';
+                    showAppMessage("Clipped off the pads for a double!", 2000);
+                    triggerImpactEffect("TWO RUNS!");
+                    strength = 10;
+                    verticalStrength = 5;
+                } else if (rand < 0.90) {
+                    rSTH = 1;
+                    cE = 'hitOne';
+                    showAppMessage("Worked into the outfield for a single.", 2000);
+                    triggerImpactEffect("ONE RUN");
+                    strength = 9;
+                    verticalStrength = 4;
+                } else {
+                    rSTH = 0;
+                    cE = 'hitDotContact';
+                    showAppMessage("Hit straight to the fielder. No run.", 2000);
+                    triggerImpactEffect("DOT BALL");
+                    strength = 7;
+                    verticalStrength = 3;
+                }
+            } else if (timingFactor < batHeight * 0.60) {
+                // Poor Timing
+                if (rand < 0.25) {
+                    isWicketCaught = true;
+                    rSTH = 0;
+                    showAppMessage("High and mistimed... is that a catch?", 3000);
+                    triggerImpactEffect("LOFTED!");
+                    strength = 9 + Math.random() * 3;
+                    verticalStrength = 15 + Math.random() * 4;
+                } else if (rand < 0.55) {
+                    rSTH = 1;
+                    cE = 'hitOne';
+                    showAppMessage("Inside edge, scurried for a single.", 1800);
+                    triggerImpactEffect("SINGLE");
+                    strength = 8;
+                    verticalStrength = 3;
+                } else if (rand < 0.70) {
+                    rSTH = 2;
+                    cE = 'hitTwo';
+                    showAppMessage("Sloppy fielding allows TWO runs!", 2000);
+                    triggerImpactEffect("TWO RUNS");
+                    strength = 9;
+                    verticalStrength = 4;
+                } else {
+                    rSTH = 0;
+                    cE = 'hitDotContact';
+                    showAppMessage("Poor timing, straight to the fielder.", 1500);
+                    triggerImpactEffect("DOT BALL");
+                    strength = 6;
+                    verticalStrength = 2;
+                }
             } else {
-                rSTH = Math.random() < 0.8 ? 1 : (Math.random() < 0.6 ? 0 : 2);
-                showAppMessage(rSTH > 0 ? `${rSTH} Run(s).` : "POOR TIMING!", 2000);
-                if (rSTH === 2) triggerImpactEffect("TWO RUNS!");
-                else if (rSTH === 1) triggerImpactEffect("ONE RUN!");
-                else triggerImpactEffect("DOT BALL!");
-                strength = 10 + (Math.random() * 1);
-                verticalStrength = 5;
-                if (rSTH === 2) cE = 'hitTwo'; else if (rSTH === 1) cE = 'hitOne'; else cE = 'hitDotContact';
+                // Horrible Timing
+                if (rand < 0.15) {
+                    isWicketCaught = true;
+                    rSTH = 0;
+                    showAppMessage("Leading edge, straight to point!", 3000);
+                    triggerImpactEffect("LEADING EDGE!");
+                    strength = 6 + Math.random() * 2;
+                    verticalStrength = 13;
+                } else if (rand < 0.35) {
+                    rSTH = 1;
+                    cE = 'hitOne';
+                    showAppMessage("Squeezed out to the leg side for a single.", 1800);
+                    triggerImpactEffect("ONE RUN");
+                    strength = 7;
+                    verticalStrength = 2;
+                } else {
+                    rSTH = 0;
+                    cE = 'hitDotContact';
+                    showAppMessage("Thick edge on the bounce, no run.", 1500);
+                    triggerImpactEffect("DOT BALL");
+                    strength = 5;
+                    verticalStrength = 1;
+                }
+            }
+
+            if (isWicketCaught) {
+                deliveryContextRef.current = { wasCaught: true };
             }
 
             const newScore = stateRefs.score + rSTH;
@@ -417,16 +561,21 @@ export function useGameEngine({ assets, commentary }: UseGameEngineProps) {
             else ballSpeedX = (Math.random() - 0.5) * 6;
             setBall(p => p ? { ...p, dx: ballSpeedX + (Math.random() - 0.5) * 2, dy: strength, dz: verticalStrength } : null);
 
-            const gameEndsByThisHit = stateRefs.wickets >= maxWickets || ballsBowledAfterThisDelivery >= totalBalls || (stateRefs.targetScore > 0 && newScore >= stateRefs.targetScore);
-
-            if (gameEndsByThisHit) {
-                gameOver({ ...stateRefs, score: newScore, ballsBowled: ballsBowledAfterThisDelivery });
+            if (isWicketCaught) {
+                // Do not trigger run commentary or run-based gameOver yet!
+                // The catch will resolve when the ball falls and trigger its own gameOver / commentary.
             } else {
-                commentary.triggerDynamicCommentary({
-                    event: cE, runsScoredThisBall: rSTH, score: newScore,
-                    targetScore: stateRefs.targetScore, wickets: stateRefs.wickets,
-                    ballsBowled: ballsBowledAfterThisDelivery, totalBalls
-                });
+                const gameEndsByThisHit = stateRefs.wickets >= maxWickets || ballsBowledAfterThisDelivery >= totalBalls || (stateRefs.targetScore > 0 && newScore >= stateRefs.targetScore);
+
+                if (gameEndsByThisHit) {
+                    gameOver({ ...stateRefs, score: newScore, ballsBowled: ballsBowledAfterThisDelivery });
+                } else {
+                    commentary.triggerDynamicCommentary({
+                        event: cE, runsScoredThisBall: rSTH, score: newScore,
+                        targetScore: stateRefs.targetScore, wickets: stateRefs.wickets,
+                        ballsBowled: ballsBowledAfterThisDelivery, totalBalls
+                    });
+                }
             }
         } else {
             if (isTutorial) {
@@ -463,7 +612,7 @@ export function useGameEngine({ assets, commentary }: UseGameEngineProps) {
 
         if (cState === 'BOWLING' || cState === 'HITTING') {
             if (!cStumps) return;
-            const newBall = { ...cBall, y: cBall.y + cBall.dy };
+            const newBall = { ...cBall, x: cBall.x + cBall.dx, y: cBall.y + cBall.dy };
 
             // --- AI Batsman Swing logic when User is Bowling ---
             if (userRole === 'BOWL' && cState === 'BOWLING' && !aiSwingTriggeredRef.current) {
@@ -566,8 +715,39 @@ export function useGameEngine({ assets, commentary }: UseGameEngineProps) {
                     setCurrentGameState('TUTORIAL');
                     setTutorialStep('COMPLETE');
                 } else {
-                    setCurrentGameState('BALL_DEAD');
-                    scheduleNextBall(2000);
+                    const wasCaughtEvent = deliveryContextRef.current.wasCaught;
+                    if (wasCaughtEvent) {
+                        const wicketsAfterThis = stateRefs.wickets + 1;
+                        setWickets(wicketsAfterThis);
+                        assets.wicketSoundRef.current?.play();
+
+                        const gameEndsByThisWicket = wicketsAfterThis >= maxWickets || stateRefs.ballsBowled >= totalBalls;
+
+                        if (gameEndsByThisWicket) {
+                            gameOver({
+                                ...stateRefs,
+                                wickets: wicketsAfterThis
+                            });
+                        } else {
+                            setCurrentGameState('OUT');
+                            showAppMessage("OUT! Caught by the fielder!", 3000);
+                            triggerImpactEffect("CAUGHT!");
+
+                            commentary.triggerDynamicCommentary({
+                                event: "wicketCaught",
+                                score: stateRefs.score,
+                                targetScore: stateRefs.targetScore,
+                                wickets: wicketsAfterThis,
+                                ballsBowled: stateRefs.ballsBowled,
+                                totalBalls
+                            });
+
+                            scheduleNextBall(3000);
+                        }
+                    } else {
+                        setCurrentGameState('BALL_DEAD');
+                        scheduleNextBall(2000);
+                    }
                 }
             }
             setBall(newBall);

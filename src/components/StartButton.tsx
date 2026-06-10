@@ -15,14 +15,12 @@ interface StartButtonProps {
 
 const StartButton: React.FC<StartButtonProps> = ({ onClick, gameState, commentaryStatus, isLoadingAssets }) => {
 
-    const isDisabled = isLoadingAssets || commentaryStatus.startsWith("🔌");
+    const isDisabled = isLoadingAssets;
     let buttonText = 'Start Game';
     let buttonClass = 'start-button-main';
 
     if (isLoadingAssets) {
         buttonText = 'Loading...';
-    } else if (commentaryStatus.startsWith("🔌")) {
-        buttonText = 'Connecting...';
     } else if (gameState === 'GAME_OVER') {
         buttonText = 'Play Again?';
         buttonClass = 'btn-retro'; // Apply new retro style for "Play Again"
