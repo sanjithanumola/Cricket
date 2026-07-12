@@ -1,6 +1,11 @@
 body {
     font-family: 'Press Start 2P', cursive;
-    background-color: #2a582a; /* Retro dark green */
+    background-color: #06030d;
+    background-image: 
+        radial-gradient(circle at center, #1b0c36 0%, #06030d 100%),
+        linear-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+    background-size: 100% 100%, 20px 20px, 20px 20px;
     color: #f7fafc; 
     margin: 0;
     overflow: hidden;
@@ -43,9 +48,9 @@ body {
 
 .game-header h1 {
     font-size: 2.5rem;
-    color: #e7d86f; /* Retro Yellow */
+    color: #00f0ff; /* Glowing neon cyan */
     margin: 0;
-    text-shadow: 3px 3px 0px rgba(0,0,0,0.7);
+    text-shadow: 0 0 5px #00f0ff, 0 0 15px #00f0ff, 3px 3px 0px #ff007f;
 }
 
 canvas {
@@ -63,11 +68,11 @@ canvas {
     bottom: 0;
     left: 0;
     width: 100%;
-    background-color: #1a1a1a;
-    border-top: 4px solid #333;
+    background-color: rgba(12, 6, 25, 0.95);
+    border-top: 3px solid #ff007f;
     padding: 8px 10px;
     font-size: 1rem;
-    color: #e7d86f; /* Retro Yellow */
+    color: #ff00ff; /* Retro Neon Pink/Magenta */
     text-transform: uppercase;
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -75,7 +80,7 @@ canvas {
     gap: 2px 15px;
     z-index: 5;
     box-sizing: border-box;
-    text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
+    text-shadow: 0 0 4px rgba(255,0,127,0.5);
 }
 
 .scoreboard .score-item {
@@ -86,7 +91,7 @@ canvas {
 
 .scoreboard .score-label {
     font-size: 0.8rem;
-    color: #ababab;
+    color: #8c82a5;
     margin-right: 10px;
 }
 
@@ -98,30 +103,33 @@ canvas {
 /* --- Base Button Style (Retro) --- */
 button {
     font-family: 'Press Start 2P', cursive;
-    background-color: #4299e1;
+    background-color: #ff007f; /* Laser Hot Pink */
     color: white;
     padding: 8px 16px;
-    border: 2px solid #000;
+    border: 2px solid #00f0ff; /* Glowing Neon Cyan border */
     border-radius: 0; /* No rounded corners for retro look */
     font-size: 0.9rem;
     cursor: pointer;
-    box-shadow: 4px 4px 0px #000;
-    transition: background-color 0.2s, transform 0.1s, box-shadow 0.1s;
-    text-shadow: 2px 2px 0px rgba(0,0,0,0.3);
+    box-shadow: 4px 4px 0px #00f0ff;
+    transition: all 0.2s, transform 0.1s, box-shadow 0.1s;
+    text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
 }
 
 button:hover {
-    background-color: #3182ce;
+    background-color: #e00070;
+    box-shadow: 4px 4px 12px #00f0ff, 0 0 8px #ff007f;
 }
 
 button:active {
-    background-color: #2b6cb0;
+    background-color: #c00060;
     transform: translate(2px, 2px);
-    box-shadow: 2px 2px 0px #000;
+    box-shadow: 2px 2px 0px #00f0ff;
 }
 
 button:disabled {
-    background-color: #a0aec0;
+    background-color: #3d2b63;
+    color: #8c82a5;
+    border-color: #5b3e94;
     cursor: not-allowed;
     opacity: 0.6;
     box-shadow: 2px 2px 0px #000;
@@ -157,8 +165,9 @@ button:disabled {
 
 .game-instructions-panel {
     margin-top: 40px;
-    background-color: rgba(10, 10, 10, 0.7);
-    border: 2px solid #a0aec0;
+    background-color: rgba(12, 6, 25, 0.85);
+    border: 2px solid #ff007f;
+    box-shadow: 0 0 15px rgba(255, 0, 127, 0.3);
     padding: 15px 25px;
     max-width: 400px;
     width: 100%;
@@ -167,11 +176,11 @@ button:disabled {
 
 .game-instructions-panel h3 {
     font-size: 1.2rem;
-    color: #e7d86f;
+    color: #00f0ff;
     margin: 0 0 15px 0;
-    text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
-    text-decoration: underline;
-    text-underline-offset: 4px;
+    text-shadow: 0 0 5px #00f0ff;
+    border-bottom: 2px dashed #ff007f;
+    padding-bottom: 8px;
 }
 
 .game-instructions-panel p {
@@ -186,18 +195,20 @@ button:disabled {
 
 /* Retro "Play Again?" Button */
 .btn-retro {
-    background-color: rgba(0, 0, 0, 0.4);
-    border: 4px solid #63b3ed;
-    color: white;
+    background-color: rgba(12, 6, 25, 0.85);
+    border: 4px solid #00f0ff;
+    color: #ff007f;
     font-size: 2rem;
     padding: 20px 40px;
-    text-shadow: 3px 3px 0 #000;
-    box-shadow: none;
-    transition: background-color 0.2s;
+    text-shadow: 0 0 8px #ff007f;
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+    transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
 }
 
 .btn-retro:hover {
-    background-color: rgba(66, 153, 225, 0.4);
+    background-color: #00f0ff;
+    color: #06030d;
+    box-shadow: 0 0 30px #00f0ff;
 }
 .btn-retro:active {
     transform: none;
@@ -227,32 +238,39 @@ button:disabled {
 }
 
 .mobile-btn {
-    background: rgba(20, 20, 20, 0.7);
-    border: 2px solid rgba(255, 255, 255, 0.8);
-    color: white;
+    background: rgba(12, 6, 25, 0.85);
+    border: 2px solid #00f0ff;
+    color: #00f0ff;
     font-size: 1rem;
     width: 60px;
     height: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 2px 2px 0px #000;
+    box-shadow: 2px 2px 0px #ff007f;
+    text-shadow: 0 0 4px #00f0ff;
 }
 .mobile-btn:active {
     transform: translate(1px, 1px);
-    box-shadow: 1px 1px 0px #000;
+    box-shadow: 1px 1px 0px #ff007f;
 }
 
 .mobile-btn.active {
-    background: #4299e1;
+    background: #ff007f;
     border-color: #fff;
+    color: #fff;
+    box-shadow: 0 0 8px #ff007f;
 }
 
 .mobile-swing-btn {
     width: 100px;
     height: 65px;
     font-size: 1.2rem;
-    background-color: #E13A7B;
+    background-color: #ff007f;
+    border-color: #00f0ff;
+    color: white;
+    box-shadow: 3px 3px 0px #00f0ff;
+    text-shadow: 0 0 5px #ff007f;
 }
 
 /* --- Game Message Area --- */
@@ -276,14 +294,16 @@ button:disabled {
     color: #fff;
     text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
     padding: 5px 12px;
-    background-color: rgba(0,0,0,0.6);
+    background-color: rgba(12, 6, 25, 0.85);
+    border: 1px solid #ff007f;
     line-height: 1.2;
 }
 
 .commentary-status {
     font-size: 0.8rem;
-    color: #a0aec0;
-    background-color: rgba(0,0,0,0.7);
+    color: #00f0ff;
+    background-color: rgba(12, 6, 25, 0.9);
+    border: 1px dashed #ff00ff;
     padding: 4px 10px;
 }
 
@@ -296,17 +316,17 @@ button:disabled {
 
 /* Generic key/button highlight style */
 .key-highlight {
-    color: #e7d86f;
-    background-color: rgba(0,0,0,0.5);
+    color: #ff00ff;
+    background-color: rgba(12, 6, 25, 0.65);
     padding: 2px 6px;
-    border: 1px solid #a0aec0;
+    border: 1px solid #00f0ff;
     display: inline-block;
 }
 
 /* --- Tutorial Highlight --- */
 .mobile-btn.tutorial-highlight {
     animation: pulse 1.2s infinite ease-in-out;
-    border-color: #e7d86f; /* Retro Yellow */
+    border-color: #00f0ff; /* Retro Yellow */
 }
 
 @keyframes pulse {
@@ -424,16 +444,16 @@ button:disabled {
     align-items: center;
     justify-content: center;
     z-index: 10;
-    background-color: rgba(0,0,0,0.65);
+    background-color: rgba(12, 6, 25, 0.85);
     padding: 20px;
     box-sizing: border-box;
 }
 
 .player-select-title {
     font-size: 2rem;
-    color: #e7d86f; /* Retro Yellow */
+    color: #00f0ff; /* Glowing Neon Cyan */
     margin: 0 0 30px 0;
-    text-shadow: 3px 3px 0px rgba(0,0,0,0.7);
+    text-shadow: 0 0 8px #00f0ff, 0 0 20px rgba(0, 240, 255, 0.5);
     text-align: center;
 }
 
@@ -445,21 +465,23 @@ button:disabled {
 }
 
 .player-card {
-    background-color: rgba(20, 20, 20, 0.7);
-    border: 4px solid #4a5568; /* Muted border */
+    background-color: rgba(12, 6, 25, 0.9);
+    border: 4px solid #3d2b63; /* Cyber violet border */
     padding: 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 15px;
     cursor: pointer;
-    transition: transform 0.2s ease-out, border-color 0.2s;
+    transition: transform 0.2s ease-out, border-color 0.2s, box-shadow 0.2s;
     width: 150px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
 }
 
 .player-card:hover {
     transform: translateY(-5px) scale(1.05);
-    border-color: #63b3ed; /* Brighter blue on hover */
+    border-color: #00f0ff; /* Glowing cyan on hover */
+    box-shadow: 0 0 15px #00f0ff, 0 0 30px rgba(0, 240, 255, 0.3);
 }
 
 .player-card img {
@@ -471,8 +493,8 @@ button:disabled {
 
 .player-card .player-name {
     font-size: 1.5rem;
-    color: #f7fafc;
-    text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
+    color: #ffffff;
+    text-shadow: 0 0 5px #ff00ff;
 }
 
 @media (max-width: 768px) {

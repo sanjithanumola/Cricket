@@ -4,13 +4,13 @@
 */
 
 // --- Game Visual Constants ---
-export const PITCH_COLOR = '#8c7853'; // Darker, retro brown
-export const FIELD_COLOR = '#48bb78';
-export const STUMPS_COLOR = '#FFFF00';
-export const BALL_FALLBACK_COLOR = '#FF0000';
-export const BAT_FALLBACK_COLOR = '#A0522D';
-export const BATSMAN_FALLBACK_COLOR = '#ADD8E6';
-export const CREASE_COLOR = '#FFFFFF';
+export const PITCH_COLOR = '#170c30'; // Futuristic neon dark violet pitch
+export const FIELD_COLOR = '#07040f'; // Dark space obsidian field
+export const STUMPS_COLOR = '#ff007f'; // Laser neon hot pink stumps
+export const BALL_FALLBACK_COLOR = '#00ffff'; // Glowing neon cyan ball
+export const BAT_FALLBACK_COLOR = '#ffcc00'; // Laser golden bat
+export const BATSMAN_FALLBACK_COLOR = '#00ffcc'; // Glowing teal batsman
+export const CREASE_COLOR = '#00ffcc'; // Neon cyan crease lines
 
 // --- Game Element Dimensions ---
 export const BALL_RADIUS = 8;

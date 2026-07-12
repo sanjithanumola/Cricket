@@ -93,7 +93,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
         // Watermark matchup
         ctx.save();
         ctx.font = "12px 'Press Start 2P'";
-        ctx.fillStyle = "rgba(40, 25, 10, 0.25)";
+        ctx.fillStyle = "rgba(0, 240, 255, 0.15)";
         ctx.textAlign = "center";
         ctx.fillText(`${battingTeam} VS ${bowlingTeam}`, CANVAS_WIDTH / 2, pH / 2 + 30);
         ctx.restore();
@@ -177,11 +177,11 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
         // Draw dynamic team name above batsman
         ctx.save();
         ctx.font = "8px 'Press Start 2P'";
-        let labelColor = '#fff';
-        if (battingTeam === 'IND') labelColor = '#63b3ed';
-        else if (battingTeam === 'AUS') labelColor = '#ecc94b';
-        else if (battingTeam === 'ENG') labelColor = '#e53e3e';
-        else if (battingTeam === 'NZ') labelColor = '#cbd5e0';
+        let labelColor = '#ffffff';
+        if (battingTeam === 'IND') labelColor = '#00f0ff'; // Neon Blue/Cyan
+        else if (battingTeam === 'AUS') labelColor = '#ffea00'; // Neon Yellow
+        else if (battingTeam === 'ENG') labelColor = '#ff007f'; // Neon Hot Pink
+        else if (battingTeam === 'NZ') labelColor = '#00ffcc'; // Glowing Teal/Green
         ctx.fillStyle = labelColor;
         ctx.textAlign = 'center';
         ctx.shadowColor = '#000';
